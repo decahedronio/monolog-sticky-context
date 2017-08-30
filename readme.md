@@ -75,7 +75,7 @@ StickyContext::enable();
 ```
 
 You may also clear all sticky context data by calling `flush`:
-```
+```php
 StickyContext::add('user', 1);
 $logger->info('Something happened');        // This will include the user id in the context
 StickyContext::flush();
