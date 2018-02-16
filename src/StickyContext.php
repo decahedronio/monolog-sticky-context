@@ -46,7 +46,9 @@ class StickyContext
      */
     public static function all()
     {
-        return static::$data;
+        return array_map(function ($value) {
+            return is_callable($value) ? $value() : $value;
+        }, static::$data);
     }
 
     /**
