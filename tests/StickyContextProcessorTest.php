@@ -12,6 +12,12 @@ class StickyContextProcessorTest extends \PHPUnit\Framework\TestCase
         parent::setUpBeforeClass();
     }
 
+    public function tearDown()
+    {
+        StickyContext::flush();
+        StickyContext::defaultStack('sticky');
+    }
+
     public function test_it_does_not_add_sticky_data_if_none_is_available()
     {
         $handler = new TestHandler;
@@ -72,5 +78,23 @@ class StickyContextProcessorTest extends \PHPUnit\Framework\TestCase
         StickyContext::flush();
         $logger->info('foo');
         $this->assertEmpty($handler->getRecords()[1]['extra']);
+    }
+
+    public function test_it_can_store_context_data_from_multiple_stacks()
+    {
+        $handler = new TestHandler;
+        $logger = new Monolog\Logger('sticky', [$handler], [new StickyContextProcessor]);
+        $logger->info('some data');
+
+        $this->assertEmpty($handler->getRecords()[0]['extra']);
+
+        StickyContext::add('user', 1);
+        StickyContext::stack('request')->add('id', 'vu4y8k');
+        $logger->info('Data with sticky context');
+
+        $this->assertEquals([
+            'sticky' => ['user' => 1],
+            'request' => ['id' => 'vu4y8k'],
+        ], $handler->getRecords()[1]['extra']);
     }
 }

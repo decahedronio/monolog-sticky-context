@@ -10,7 +10,7 @@ class StickyContextProcessor
             return $record;
         }
 
-        $record['extra']['sticky'] = StickyContext::all();
+        $record['extra'] = array_merge($record['extra'], StickyContext::all());
 
         return $record;
     }
