@@ -82,3 +82,64 @@ StickyContext::flush();
 
 $logger->info('Something else happened');   // The sticky context is now empty and not included
 ```
+
+If you need to attach data that may change over time, and hence requires a callback to retrieve this data,
+you may specify a callback as the second value:
+
+```php
+StickyContext::add('user', function () {
+    return user()->id;
+});
+```
+
+Closures are evaluated every time the processor runs. As such, the data does not get cached between log messages.
+This means that you can add this sticky context data at instantiation (which can be useful for packages).
+However, as it is executed every time, it's also slightly less performant than storing a static value.
+
+### Stacks
+
+If you have the need to separate your sticky data into multiple different keys in Monolog's `extra` array,
+you may use Stacks. A stack holds a collection of sticky data, and you may use multiple stacks to separate your data.
+
+One possible use case for this is where you have (internal) packages that add sticky data to your logs.
+In this case, you might want to separate what sticky data is set by the package, and what is set by the application.
+By making the package log to its own Stack, the data will appear under a specified key in the `extra` array of the record.
+
+#### Example
+
+```php
+// Somewhere in the package
+StickyContext::stack('my_package')->add('request_id', Uuid::uuid4()->toString());
+
+// In the application
+StickyContext::add('user', user()->id);
+```
+This will push new sticky data to the `my_package` stack. When the message gets logged, your log message's `extra` key will look as follows:
+
+```php
+[
+    'sticky' => [
+        'user' => 1,
+    ],
+ 
+    'my_package' => [
+        'request_id' => '91c9dc1e-11ed-46ff-8598-701a9f93eb2b',
+    ],
+]
+```
+
+#### The Default Stack
+
+A Stack is the underlying object used for storing context data. When you call `StickyContext::add()`, the call is
+in reality proxied to `StickyContext::stack('sticky')->add()`. This is referred to as the _default_ stack. You
+may change the default stack by calling `StickyContext::defaultStack()`.
+
+```php
+StickyContext::defaultStack('application');
+```
+
+Now, when adding context data and then sending log messages, the sticky data will be added under `['extra']['application']`,
+rather than the default `['extra']['sticky']`.
+
+Note that when changing the default stack, any sticky data you have previously added **is preserved**, it is simply moved
+to the new stack name.
