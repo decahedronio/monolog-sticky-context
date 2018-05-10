@@ -43,8 +43,7 @@ Install the package by requiring the package with composer:
 composer require decahedron/monolog-sticky-context
 ```
 
-## Usage
-Simply push the `StickyContextProcessor` onto your Monolog instance in the following way:
+Then push the `StickyContextProcessor` onto your Monolog instance in the following way:
 
 ```php
 <?php
@@ -53,6 +52,32 @@ use Decahedron\StickyLogging\StickyContextProcessor;
 $logger = new Monolog\Logger('sticky');
 $logger->pushProcessor(new StickyContextProcessor);
 ```
+
+### For Laravel 5.6+ Users
+
+If you are using the [Laravel framework](https://laravel.com) on version 5.6 or greater,
+you may use our `tap` in your logging configuration:
+
+```php
+use Decahedron\StickyLogging\Laravel\UseStickyLogging;
+
+return [
+    ...
+    
+    'channels' => [
+        'single' => [
+            'driver' => 'single'
+            'path'   => storage_path('logs/laravel.log'),
+            'level'  => 'debug',
+            'tap'    => [UseStickyLogging::class]
+        ],
+        
+        ...
+    ]
+]
+```
+
+## Usage
 
 After that, you only have to worry about interacting with the `StickyContext` object.
 
