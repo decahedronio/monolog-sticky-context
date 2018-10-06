@@ -32,4 +32,30 @@ class StickyContextStackTest extends \PHPUnit\Framework\TestCase
 
         $this->assertEquals([], $stack->all());
     }
+
+    public function test_it_prevents_recursion()
+    {
+        $stack = new StickyContextStack();
+        StickyContextStack::$recursionLimit = 3;
+
+        $counter = 0;
+
+        $stack->add('foo', function () use (&$counter, $stack) {
+           $counter++;
+           return ['counter' => $counter, 'stack' => $stack->all()];
+        });
+
+        $result = $stack->all();
+
+        $this->assertEquals(['foo' => [
+            'counter' => 1,
+            'stack' => ['foo' => [
+                'counter' => 2,
+                'stack' => ['foo' => [
+                    'counter' => 3,
+                    'stack' => [],
+                ]]
+            ]]
+        ]], $result);
+    }
 }
