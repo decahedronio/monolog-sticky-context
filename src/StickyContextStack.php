@@ -12,6 +12,16 @@ class StickyContextStack
     protected $data = [];
 
     /**
+     * @var int
+     */
+    static $recursionLimit = 5;
+
+    /**
+     * @var int
+     */
+    private $recursionCounter = 0;
+
+    /**
      * Clear the stack of all messages.
      */
     public function flush()
@@ -20,22 +30,28 @@ class StickyContextStack
     }
 
     /**
-     * Retrieve all messages on the stack.
+     * Retrieve all messages on the stack. Prevent recursion beyond the static limit.
      *
      * @return array
      */
     public function all()
     {
-        return array_map(function ($value) {
-            return is_callable($value) ? $value() : $value;
-        }, $this->data);
+        $this->recursionCounter++;
+
+        if ($this->recursionCounter <= static::$recursionLimit) {
+            return array_map(function ($value) {
+                return is_callable($value) ? $value() : $value;
+            }, $this->data);
+        }
+
+        return [];
     }
 
     /**
      * Add context-loggable data to the sticky context.
      *
-     * @param  string  $key
-     * @param  mixed  $data
+     * @param string         $key
+     * @param callable|mixed $data
      */
     public function add(string $key, $data)
     {
